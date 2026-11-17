@@ -8,18 +8,24 @@ function LayoutThumbnail({
 	return (
 		<span
 			aria-hidden="true"
-			className={`relative flex h-36 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white p-2 ${
-				family === "strip" ? "aspect-1/3" : "aspect-2/3"
+			className={`relative flex w-36 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white p-2 ${
+				family === "strip" ? "aspect-3/1" : "aspect-3/2"
 			}`}
 		>
 			<span
 				className={`grid h-full w-full gap-1 ${
 					family === "strip"
-						? "grid-cols-1"
-						: shots === 1
+						? shots === 1
 							? "grid-cols-1"
 							: shots === 2
 								? "grid-cols-2"
+								: shots === 3
+									? "grid-cols-3"
+									: "grid-cols-4"
+						: shots === 1
+							? "grid-cols-1"
+							: shots === 2
+								? "grid-rows-2"
 								: "grid-cols-2 grid-rows-2"
 				}`}
 			>

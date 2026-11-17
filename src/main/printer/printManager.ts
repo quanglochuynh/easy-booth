@@ -138,6 +138,8 @@ export class PrintManager {
 						printBackground: true,
 						deviceName: request.printerName,
 						copies: request.copies,
+						landscape:
+							request.pageSize.widthInches > request.pageSize.heightInches,
 						margins: { marginType: "none" },
 						pageSize: {
 							width: Math.round(request.pageSize.widthInches * 25_400),

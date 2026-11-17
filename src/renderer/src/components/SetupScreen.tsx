@@ -43,13 +43,13 @@ function SetupScreen({
 							[
 								{
 									id: "strip",
-									title: "2 × 6 Photo Strip",
-									subtitle: "Classic vertical strip",
+									title: "6 × 2 Photo Strip",
+									subtitle: "Classic horizontal strip",
 									selected: layoutFamily === "strip",
 								},
 								{
 									id: "postcard",
-									title: "4 × 6 Grid",
+									title: "6 × 4 Grid",
 									subtitle: "A postcard to keep",
 									selected: layoutFamily === "postcard",
 								},
@@ -133,7 +133,11 @@ function SetupScreen({
 								onClick={() => setSelectedFrame(frame)}
 								type="button"
 							>
-								<div className="relative h-20 w-16 overflow-hidden rounded-lg bg-neutral-700">
+								<div
+									className={`relative w-24 overflow-hidden rounded-lg bg-neutral-700 ${
+										layoutFamily === "strip" ? "h-8" : "h-16"
+									}`}
+								>
 									<div className="absolute inset-2 grid grid-rows-3 gap-1">
 										{[0, 1, 2].map((slot) => (
 											<span className="rounded-sm bg-neutral-500" key={slot} />

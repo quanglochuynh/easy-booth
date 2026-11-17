@@ -45,7 +45,10 @@ function validateLayout(layout: PhotoLayout, photos: string[]): void {
 	) {
 		throw new RangeError("Layout dimensions must be positive integers");
 	}
-	if (photos.length !== layout.shotCount || layout.slots.length !== layout.shotCount) {
+	if (
+		photos.length !== layout.shotCount ||
+		layout.slots.length !== layout.shotCount
+	) {
 		throw new RangeError(
 			`Layout "${layout.id}" requires exactly ${layout.shotCount} photos and slots`,
 		);
@@ -64,7 +67,9 @@ function validateLayout(layout: PhotoLayout, photos: string[]): void {
 			slot.x + slot.width > layout.widthPx ||
 			slot.y + slot.height > layout.heightPx
 		) {
-			throw new RangeError(`Layout "${layout.id}" contains an invalid photo slot`);
+			throw new RangeError(
+				`Layout "${layout.id}" contains an invalid photo slot`,
+			);
 		}
 	}
 }
@@ -96,9 +101,14 @@ function drawPhoto(
 	image: HTMLImageElement,
 	slot: PhotoSlot,
 ): void {
-	const rotation = ((slot.rotation ?? 0) % 360 + 360) % 360;
+	const rotation = (((slot.rotation ?? 0) % 360) + 360) % 360;
 	if (rotation === 0) {
+		context.save();
+		context.beginPath();
+		context.rect(slot.x, slot.y, slot.width, slot.height);
+		context.clip();
 		drawCover(context, image, slot.x, slot.y, slot.width, slot.height);
+		context.restore();
 		return;
 	}
 
@@ -113,7 +123,14 @@ function drawPhoto(
 	const absSin = Math.abs(Math.sin(radians));
 	const drawWidth = slot.width * absCos + slot.height * absSin;
 	const drawHeight = slot.width * absSin + slot.height * absCos;
-	drawCover(context, image, -drawWidth / 2, -drawHeight / 2, drawWidth, drawHeight);
+	drawCover(
+		context,
+		image,
+		-drawWidth / 2,
+		-drawHeight / 2,
+		drawWidth,
+		drawHeight,
+	);
 	context.restore();
 }
 
@@ -125,7 +142,10 @@ function drawCover(
 	width: number,
 	height: number,
 ): void {
-	const scale = Math.max(width / image.naturalWidth, height / image.naturalHeight);
+	const scale = Math.max(
+		width / image.naturalWidth,
+		height / image.naturalHeight,
+	);
 	const drawnWidth = image.naturalWidth * scale;
 	const drawnHeight = image.naturalHeight * scale;
 	context.drawImage(
