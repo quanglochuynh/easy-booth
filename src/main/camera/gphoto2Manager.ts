@@ -1,5 +1,5 @@
 import { type ChildProcess, execFile, spawn } from "node:child_process";
-import { copyFile, readdir, readFile, stat } from "node:fs/promises";
+import { copyFile, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { app } from "electron";
@@ -241,13 +241,15 @@ export class Gphoto2Manager {
 				capturePath = join(directory, `shot_${this.captureNumber}.png`);
 				await copyFile(this.getMockImagePath(), capturePath);
 			} else {
+				// The camera's own %n counter can repeat, overwriting earlier shots.
+				capturePath = join(directory, `shot_${this.captureNumber}.jpg`);
 				await this.runGphoto2([
 					"--capture-image-and-download",
 					"--filename",
-					join(directory, "shot_%n.jpg"),
+					capturePath,
 					"--force-overwrite",
 				]);
-				capturePath = await this.findLatestCapture(directory);
+				await stat(capturePath);
 			}
 		} catch (error) {
 			captureFailure = error;
@@ -331,23 +333,6 @@ export class Gphoto2Manager {
 		} catch (error) {
 			throw commandError("gphoto2 command failed", error);
 		}
-	}
-
-	private async findLatestCapture(directory: string): Promise<string> {
-		const files = await readdir(directory);
-		const captures = await Promise.all(
-			files
-				.filter((file) => /^shot_\d+\.jpg$/i.test(file))
-				.map(async (file) => ({
-					path: join(directory, file),
-					mtimeMs: (await stat(join(directory, file))).mtimeMs,
-				})),
-		);
-		captures.sort((a, b) => b.mtimeMs - a.mtimeMs);
-		if (!captures[0]) {
-			throw new Error("gphoto2 completed without producing a JPEG capture");
-		}
-		return captures[0].path;
 	}
 
 	private isLiveViewRunning(): boolean {
