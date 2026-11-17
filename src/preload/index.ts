@@ -5,11 +5,16 @@ import type { LiveViewFrame, PhotoboothAPI } from "../types/photobooth";
 // Custom APIs for renderer
 const photoboothAPI: PhotoboothAPI = {
 	detectCamera: () => ipcRenderer.invoke("camera:detect"),
+	detectCameras: () => ipcRenderer.invoke("camera:detect-all"),
+	setSelectedCamera: (port) => ipcRenderer.invoke("camera:set-selected", port),
 	releaseCameraLock: () => ipcRenderer.invoke("camera:release-lock"),
 	startLiveView: () => ipcRenderer.invoke("camera:liveview-start"),
 	stopLiveView: () => ipcRenderer.invoke("camera:liveview-stop"),
 	capture: () => ipcRenderer.invoke("camera:capture"),
 	saveComposite: (dataUrl) => ipcRenderer.invoke("storage:save-composite", dataUrl),
+	getOutputDirectory: () => ipcRenderer.invoke("storage:get-output-directory"),
+	chooseOutputDirectory: () =>
+		ipcRenderer.invoke("storage:choose-output-directory"),
 	listPrinters: () => ipcRenderer.invoke("printer:list"),
 	getPrinterConfig: () => ipcRenderer.invoke("printer:get-config"),
 	setSelectedPrinter: (name) =>

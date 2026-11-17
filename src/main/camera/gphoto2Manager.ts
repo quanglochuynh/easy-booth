@@ -23,6 +23,7 @@ interface Gphoto2ManagerOptions {
 
 export class Gphoto2Manager {
 	private mockMode = false;
+	private selectedCameraPort?: string;
 	private liveViewProcess?: LiveViewProcess;
 	private mockTimer?: NodeJS.Timeout;
 	private captureQueue: Promise<void> = Promise.resolve();
@@ -35,25 +36,58 @@ export class Gphoto2Manager {
 			return { connected: true, model: "Mock Camera", port: "mock" };
 		}
 
-		const { stdout } = await this.runGphoto2(["--auto-detect"]);
-		const lines = stdout.split(/\r?\n/);
-		const cameraLine = lines.find(
-			(line) =>
-				line.trim().length > 0 &&
-				!/^camera\s+port$/i.test(line.trim()) &&
-				!/^[-\s]+$/.test(line),
+		const cameras = await this.detectCameras();
+		return (
+			cameras.find((camera) => camera.port === this.selectedCameraPort) ??
+			cameras[0] ??
+			{ connected: false }
 		);
+	}
 
-		if (!cameraLine) {
-			return { connected: false };
+	async detectCameras(): Promise<CameraDetection[]> {
+		if (this.mockMode) {
+			return [{ connected: true, model: "Mock Camera", port: "mock" }];
 		}
 
-		const match = cameraLine.match(/^\s*(.+?)\s{2,}(\S.*?)\s*$/);
-		if (!match) {
-			return { connected: false };
-		}
+		const { stdout } = await this.runGphoto2(["--auto-detect"]);
+		return stdout
+			.split(/\r?\n/)
+			.map((line) => line.match(/^\s*(.+?)\s{2,}(\S.*?)\s*$/))
+			.filter(
+				(match): match is RegExpMatchArray =>
+					match !== null &&
+					!/^(?:camera|model)$/i.test(match[1].trim()) &&
+					!/^port$/i.test(match[2].trim()) &&
+					!/^[-\s]+$/.test(match[0]),
+			)
+			.map((match) => ({
+				connected: true,
+				model: match[1].trim(),
+				port: match[2].trim(),
+			}));
+	}
 
-		return { connected: true, model: match[1].trim(), port: match[2].trim() };
+	async setSelectedCamera(port: string): Promise<void> {
+		if (!port.trim()) {
+			throw new TypeError("Camera port must be a non-empty string");
+		}
+		if (port === "mock" && !this.mockMode) {
+			throw new Error("Mock camera mode is not enabled");
+		}
+		if (
+			port !== "mock" &&
+			!(await this.detectCameras()).some((camera) => camera.port === port)
+		) {
+			throw new Error(`Camera port is not connected: ${port}`);
+		}
+		const restartLiveView = this.isLiveViewRunning();
+		if (restartLiveView) {
+			await this.stopLiveView();
+		}
+		this.selectedCameraPort = port;
+		if (restartLiveView) {
+			await this.startLiveView();
+		}
 	}
 
 	async releaseLock(): Promise<boolean> {
@@ -92,7 +126,11 @@ export class Gphoto2Manager {
 			return;
 		}
 
-		const child = spawn("gphoto2", ["--capture-movie", "--stdout"], {
+		const liveViewArgs = ["--capture-movie", "--stdout"];
+		if (this.selectedCameraPort && this.selectedCameraPort !== "mock") {
+			liveViewArgs.push("--port", this.selectedCameraPort);
+		}
+		const child = spawn("gphoto2", liveViewArgs, {
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 		let stderr = "";
@@ -179,6 +217,9 @@ export class Gphoto2Manager {
 		const restartLiveView = this.isLiveViewRunning();
 		await this.stopLiveView();
 		this.mockMode = enabled;
+		if (enabled || this.selectedCameraPort === "mock") {
+			this.selectedCameraPort = undefined;
+		}
 		if (restartLiveView) {
 			await this.startLiveView();
 		}
@@ -275,7 +316,13 @@ export class Gphoto2Manager {
 		args: string[],
 	): Promise<{ stdout: string; stderr: string }> {
 		try {
-			const result = await execFileAsync("gphoto2", args, {
+			const commandArgs =
+				this.selectedCameraPort &&
+				this.selectedCameraPort !== "mock" &&
+				!args.includes("--auto-detect")
+					? [...args, "--port", this.selectedCameraPort]
+					: args;
+			const result = await execFileAsync("gphoto2", commandArgs, {
 				encoding: "utf8",
 				maxBuffer: 10 * 1024 * 1024,
 				timeout: 120_000,

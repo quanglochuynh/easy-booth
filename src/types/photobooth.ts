@@ -11,11 +11,15 @@ export interface LiveViewFrame {
 
 export interface PhotoboothAPI {
 	detectCamera(): Promise<CameraDetection>;
+	detectCameras(): Promise<CameraDetection[]>;
+	setSelectedCamera(port: string): Promise<void>;
 	releaseCameraLock(): Promise<boolean>;
 	startLiveView(): Promise<void>;
 	stopLiveView(): Promise<void>;
 	capture(): Promise<string>;
 	saveComposite(dataUrl: string): Promise<string>;
+	getOutputDirectory(): Promise<string>;
+	chooseOutputDirectory(): Promise<string | null>;
 	listPrinters(): Promise<PrinterInfo[]>;
 	getPrinterConfig(): Promise<PrinterConfig>;
 	setSelectedPrinter(name: string | null): Promise<PrinterConfig>;

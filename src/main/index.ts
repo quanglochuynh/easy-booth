@@ -1,10 +1,14 @@
-import { app, shell, BrowserWindow, ipcMain } from "electron";
-import { electronApp, optimizer, is } from "@electron-toolkit/utils";
+import { electronApp, is, optimizer } from "@electron-toolkit/utils";
+import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import { join } from "path";
 import icon from "../../resources/icon.png?asset";
 import { Gphoto2Manager } from "./camera/gphoto2Manager";
 import { PrintManager } from "./printer/printManager";
-import { saveComposite } from "./storage/fileManager";
+import {
+	getOutputDirectory,
+	saveComposite,
+	setOutputDirectory,
+} from "./storage/fileManager";
 
 const cameraManager = new Gphoto2Manager({
 	onFrame: (frame) => {
@@ -22,6 +26,13 @@ const printManager = new PrintManager();
 
 function registerCameraIpc(): void {
 	ipcMain.handle("camera:detect", () => cameraManager.detect());
+	ipcMain.handle("camera:detect-all", () => cameraManager.detectCameras());
+	ipcMain.handle("camera:set-selected", (_event, port: unknown) => {
+		if (typeof port !== "string") {
+			throw new TypeError("Camera port must be a string");
+		}
+		return cameraManager.setSelectedCamera(port);
+	});
 	ipcMain.handle("camera:release-lock", () => cameraManager.releaseLock());
 	ipcMain.handle("camera:liveview-start", () => cameraManager.startLiveView());
 	ipcMain.handle("camera:liveview-stop", () => cameraManager.stopLiveView());
@@ -31,6 +42,24 @@ function registerCameraIpc(): void {
 			throw new TypeError("Composite data must be a string");
 		}
 		return saveComposite(dataUrl);
+	});
+	ipcMain.handle("storage:get-output-directory", () => getOutputDirectory());
+	ipcMain.handle("storage:choose-output-directory", async () => {
+		const window =
+			BrowserWindow.getFocusedWindow() ?? BrowserWindow.getAllWindows()[0];
+		const options = {
+			properties: ["openDirectory", "createDirectory"] as (
+				| "openDirectory"
+				| "createDirectory"
+			)[],
+		};
+		const result = window
+			? await dialog.showOpenDialog(window, options)
+			: await dialog.showOpenDialog(options);
+		if (result.canceled || !result.filePaths[0]) {
+			return null;
+		}
+		return setOutputDirectory(result.filePaths[0]);
 	});
 	ipcMain.handle("camera:set-mock-mode", (_event, enabled: unknown) => {
 		if (typeof enabled !== "boolean") {
@@ -132,7 +161,9 @@ app.on("before-quit", (event) => {
 	stoppingCamera = true;
 	void cameraManager
 		.stopLiveView()
-		.catch((error: unknown) => console.error("Could not stop camera live view", error))
+		.catch((error: unknown) =>
+			console.error("Could not stop camera live view", error),
+		)
 		.finally(() => app.quit());
 });
 
