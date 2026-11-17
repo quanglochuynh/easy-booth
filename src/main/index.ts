@@ -2,6 +2,56 @@ import { app, shell, BrowserWindow, ipcMain } from "electron";
 import { electronApp, optimizer, is } from "@electron-toolkit/utils";
 import { join } from "path";
 import icon from "../../resources/icon.png?asset";
+import { Gphoto2Manager } from "./camera/gphoto2Manager";
+import { PrintManager } from "./printer/printManager";
+import { saveComposite } from "./storage/fileManager";
+
+const cameraManager = new Gphoto2Manager({
+	onFrame: (frame) => {
+		for (const window of BrowserWindow.getAllWindows()) {
+			window.webContents.send("camera:liveview-frame", frame);
+		}
+	},
+	onError: (message) => {
+		for (const window of BrowserWindow.getAllWindows()) {
+			window.webContents.send("camera:error", message);
+		}
+	},
+});
+const printManager = new PrintManager();
+
+function registerCameraIpc(): void {
+	ipcMain.handle("camera:detect", () => cameraManager.detect());
+	ipcMain.handle("camera:release-lock", () => cameraManager.releaseLock());
+	ipcMain.handle("camera:liveview-start", () => cameraManager.startLiveView());
+	ipcMain.handle("camera:liveview-stop", () => cameraManager.stopLiveView());
+	ipcMain.handle("camera:capture", () => cameraManager.capture());
+	ipcMain.handle("storage:save-composite", (_event, dataUrl: unknown) => {
+		if (typeof dataUrl !== "string") {
+			throw new TypeError("Composite data must be a string");
+		}
+		return saveComposite(dataUrl);
+	});
+	ipcMain.handle("camera:set-mock-mode", (_event, enabled: unknown) => {
+		if (typeof enabled !== "boolean") {
+			throw new TypeError("Mock mode must be a boolean");
+		}
+		return cameraManager.setMockMode(enabled);
+	});
+	ipcMain.handle("printer:list", (event) =>
+		printManager.listPrinters(event.sender),
+	);
+	ipcMain.handle("printer:get-config", () => printManager.getPrinterConfig());
+	ipcMain.handle("printer:set-selected", (_event, name: unknown) => {
+		if (name !== null && typeof name !== "string") {
+			throw new TypeError("Printer name must be a string or null");
+		}
+		return printManager.setSelectedPrinter(name);
+	});
+	ipcMain.handle("printer:print-image", (_event, request: unknown) =>
+		printManager.printImage(request),
+	);
+}
 
 function createWindow(): void {
 	// Create the browser window.
@@ -39,6 +89,8 @@ function createWindow(): void {
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.whenReady().then(() => {
+	registerCameraIpc();
+
 	// Set app user model id for windows
 	electronApp.setAppUserModelId("com.electron");
 
@@ -68,6 +120,20 @@ app.on("window-all-closed", () => {
 	if (process.platform !== "darwin") {
 		app.quit();
 	}
+});
+
+let stoppingCamera = false;
+app.on("before-quit", (event) => {
+	if (stoppingCamera) {
+		return;
+	}
+
+	event.preventDefault();
+	stoppingCamera = true;
+	void cameraManager
+		.stopLiveView()
+		.catch((error: unknown) => console.error("Could not stop camera live view", error))
+		.finally(() => app.quit());
 });
 
 // In this file you can include the rest of your app's specific main process

@@ -1,18 +1,46 @@
-export type PhotoboothAPI = Record<string, never>;
+export interface CameraDetection {
+	connected: boolean;
+	model?: string;
+	port?: string;
+}
+
+export interface LiveViewFrame {
+	data: string;
+	mimeType: "image/jpeg" | "image/png";
+}
+
+export interface PhotoboothAPI {
+	detectCamera(): Promise<CameraDetection>;
+	releaseCameraLock(): Promise<boolean>;
+	startLiveView(): Promise<void>;
+	stopLiveView(): Promise<void>;
+	capture(): Promise<string>;
+	saveComposite(dataUrl: string): Promise<string>;
+	listPrinters(): Promise<PrinterInfo[]>;
+	getPrinterConfig(): Promise<PrinterConfig>;
+	setSelectedPrinter(name: string | null): Promise<PrinterConfig>;
+	printImage(request: PrintImageRequest): Promise<void>;
+	setMockMode(enabled: boolean): Promise<void>;
+	onLiveViewFrame(callback: (frame: LiveViewFrame) => void): () => void;
+	onCameraError(callback: (message: string) => void): () => void;
+}
 
 export interface PhotoSlot {
 	x: number;
 	y: number;
 	width: number;
 	height: number;
+	rotation?: number;
 }
 
 export interface PhotoLayout {
 	id: string;
 	name: string;
-	widthInches: number;
-	heightInches: number;
+	widthPx: number;
+	heightPx: number;
+	shotCount: number;
 	slots: PhotoSlot[];
+	availableFrames: string[];
 }
 
 export interface PhotoFrame {
@@ -25,6 +53,22 @@ export interface PrinterInfo {
 	name: string;
 	isDefault: boolean;
 	status?: string;
+}
+
+export interface PrinterConfig {
+	selectedPrinter: string | null;
+}
+
+export interface PrintPageSize {
+	widthInches: number;
+	heightInches: number;
+}
+
+export interface PrintImageRequest {
+	imagePath: string;
+	printerName: string;
+	copies: number;
+	pageSize: PrintPageSize;
 }
 
 declare global {
