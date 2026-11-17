@@ -1,10 +1,10 @@
-import { spawn, execFile, type ChildProcess } from "node:child_process";
-import { copyFile, readFile, readdir, stat } from "node:fs/promises";
+import { type ChildProcess, execFile, spawn } from "node:child_process";
+import { copyFile, readdir, readFile, stat } from "node:fs/promises";
 import { join } from "node:path";
 import { promisify } from "node:util";
 import { app } from "electron";
-import { getSessionDirectory } from "../storage/fileManager";
 import type { CameraDetection, LiveViewFrame } from "../../types/photobooth";
+import { getSessionDirectory } from "../storage/fileManager";
 
 const execFileAsync = promisify(execFile);
 const MAX_FRAME_SIZE = 20 * 1024 * 1024;
@@ -96,7 +96,7 @@ export class Gphoto2Manager {
 			stdio: ["ignore", "pipe", "pipe"],
 		});
 		let stderr = "";
-		let pending = Buffer.alloc(0);
+		let pending: Buffer = Buffer.alloc(0);
 		let hasSpawned = false;
 		const record: LiveViewProcess = {
 			child,

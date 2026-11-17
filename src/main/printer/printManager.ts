@@ -8,14 +8,15 @@ import {
 	stat,
 	writeFile,
 } from "node:fs/promises";
-import { join, resolve, tmpdir } from "node:path";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { app, BrowserWindow, type WebContents } from "electron";
 import type {
-	PrintImageRequest,
-	PrintPageSize,
 	PrinterConfig,
 	PrinterInfo,
+	PrintImageRequest,
+	PrintPageSize,
 } from "../../types/photobooth";
 
 const MAX_PRINT_IMAGE_SIZE = 100 * 1024 * 1024;
@@ -29,8 +30,7 @@ export class PrintManager {
 		return printers.map((printer) => ({
 			name: printer.name,
 			isDefault: printer.isDefault,
-			status:
-				printer.status === undefined ? undefined : String(printer.status),
+			status: printer.status === undefined ? undefined : String(printer.status),
 		}));
 	}
 
@@ -52,12 +52,16 @@ export class PrintManager {
 		try {
 			config = JSON.parse(contents);
 		} catch (error) {
-			throw new Error("Printer configuration contains invalid JSON", { cause: error });
+			throw new Error("Printer configuration contains invalid JSON", {
+				cause: error,
+			});
 		}
 		return parsePrinterConfig(config);
 	}
 
-	async setSelectedPrinter(selectedPrinter: string | null): Promise<PrinterConfig> {
+	async setSelectedPrinter(
+		selectedPrinter: string | null,
+	): Promise<PrinterConfig> {
 		if (
 			selectedPrinter !== null &&
 			(typeof selectedPrinter !== "string" || !selectedPrinter.trim())
@@ -124,7 +128,9 @@ export class PrintManager {
 			}
 			await new Promise<void>((resolvePrint, rejectPrint) => {
 				window.once("closed", () =>
-					rejectPrint(new Error("Print window closed before printing completed")),
+					rejectPrint(
+						new Error("Print window closed before printing completed"),
+					),
 				);
 				window.webContents.print(
 					{
@@ -226,7 +232,9 @@ function parsePrintImageRequest(input: unknown): PrintImageRequest {
 		pageSize.widthInches > 24 ||
 		pageSize.heightInches > 24
 	) {
-		throw new RangeError("Page dimensions must be greater than 0 and no more than 24 inches");
+		throw new RangeError(
+			"Page dimensions must be greater than 0 and no more than 24 inches",
+		);
 	}
 
 	return {
@@ -249,7 +257,9 @@ function parsePrinterConfig(config: unknown): PrinterConfig {
 				config.selectedPrinter.trim().length > 0)
 		)
 	) {
-		throw new TypeError("Printer configuration has an invalid selectedPrinter value");
+		throw new TypeError(
+			"Printer configuration has an invalid selectedPrinter value",
+		);
 	}
 	return {
 		selectedPrinter:
