@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { photoLayouts } from "../../config/layouts";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Navigate, Route, Routes, useNavigate } from "react-router";
+import { DEFAULT_LAYOUT_ID, photoLayouts } from "../../config/layouts";
 import type { PhotoLayout } from "../../types/photobooth";
 import { composite } from "../../utils/canvasCompositor";
 import {
@@ -20,8 +21,6 @@ const MOCK_MODE_STORAGE_KEY = "easy-booth-mock-mode";
 
 function App() {
 	const {
-		screen,
-		setScreen,
 		setCameras,
 		selectedCamera,
 		setSelectedCamera,
@@ -55,6 +54,8 @@ function App() {
 		setPrinting,
 		setErrorMessage,
 	} = useBoothStore();
+	const navigate = useNavigate();
+	const [captureActive, setCaptureActive] = useState(false);
 	const audioContext = useRef<AudioContext | null>(null);
 
 	const layout = useMemo(
@@ -63,7 +64,7 @@ function App() {
 				(item) =>
 					item.id.startsWith(layoutFamily) && item.shotCount === shotCount,
 			) ??
-			photoLayouts.find((item) => item.id === "postcard-4x6-3-photo") ??
+			photoLayouts.find((item) => item.id === DEFAULT_LAYOUT_ID) ??
 			(() => {
 				throw new Error("No default photo layout is configured.");
 			})(),
@@ -194,7 +195,7 @@ function App() {
 	}, [setAdminOpen]);
 
 	useEffect(() => {
-		if (!availableFrames.includes(selectedFrame)) {
+		if (selectedFrame && !availableFrames.includes(selectedFrame)) {
 			setSelectedFrame(availableFrames[0] ?? "");
 		}
 	}, [availableFrames, selectedFrame, setSelectedFrame]);
@@ -268,7 +269,7 @@ function App() {
 
 	const startSetup = () => {
 		setErrorMessage("");
-		setScreen("setup");
+		navigate("/setup", { replace: true });
 	};
 
 	const startCaptureSession = async () => {
@@ -278,7 +279,8 @@ function App() {
 		setCompositeImage("");
 		setCapturedPreview("");
 		setCopyCount(1);
-		setScreen("capture");
+		setCaptureActive(true);
+		navigate("/capture", { replace: true });
 		try {
 			if (!audioContext.current) {
 				audioContext.current = new AudioContext();
@@ -333,7 +335,8 @@ function App() {
 		);
 		setShots(captured);
 		setCompositeImage(result);
-		setScreen("review");
+		setCaptureActive(false);
+		navigate("/review", { replace: true });
 	};
 
 	const cancelCapture = async () => {
@@ -343,7 +346,8 @@ function App() {
 		try {
 			await window.photoboothAPI.stopLiveView();
 			setLiveView("");
-			setScreen("setup");
+			setCaptureActive(false);
+			navigate("/setup", { replace: true });
 		} catch (error) {
 			setErrorMessage(`Could not stop live view: ${errorText(error)}`);
 		}
@@ -370,9 +374,9 @@ function App() {
 			});
 			await delay(5_000);
 			setPrinting(false);
-			setScreen("attract");
 			setShots([]);
 			setCompositeImage("");
+			navigate("/", { replace: true });
 		} catch (error) {
 			setPrinting(false);
 			setErrorMessage(`Printing failed: ${errorText(error)}`);
@@ -397,22 +401,45 @@ function App() {
 				{cameraStatus}
 			</div>
 
-			{screen === "attract" && <AttractScreen onStart={startSetup} />}
-
-			{screen === "setup" && (
-				<SetupScreen
-					availableFrames={availableFrames}
-					onStartCapture={startCaptureSession}
+			<Routes>
+				<Route path="/" element={<AttractScreen onStart={startSetup} />} />
+				<Route
+					path="/setup"
+					element={
+						<SetupScreen
+							availableFrames={availableFrames}
+							onStartCapture={startCaptureSession}
+						/>
+					}
 				/>
-			)}
-
-			{screen === "capture" && (
-				<CaptureScreen shotCount={layout.shotCount} onCancel={cancelCapture} />
-			)}
-
-			{screen === "review" && (
-				<ReviewScreen onRetake={startCaptureSession} onPrint={printPhotos} />
-			)}
+				<Route
+					path="/capture"
+					element={
+						captureActive ? (
+							<CaptureScreen
+								shotCount={layout.shotCount}
+								onCancel={cancelCapture}
+							/>
+						) : (
+							<Navigate to="/setup" replace />
+						)
+					}
+				/>
+				<Route
+					path="/review"
+					element={
+						compositeImage ? (
+							<ReviewScreen
+								onRetake={startCaptureSession}
+								onPrint={printPhotos}
+							/>
+						) : (
+							<Navigate to="/setup" replace />
+						)
+					}
+				/>
+				<Route path="*" element={<Navigate to="/" replace />} />
+			</Routes>
 
 			{printing && (
 				<div className="fixed inset-0 z-40 flex flex-col items-center justify-center gap-5 bg-neutral-950/95 text-center">

@@ -1,5 +1,7 @@
 import type { PhotoLayout } from "../types/photobooth";
 
+export const DEFAULT_LAYOUT_ID = "postcard-4x6-3-photo";
+
 const postcardFrame = "frames/postcard-frame.png";
 const stripFrame = "frames/strip-frame.png";
 

@@ -1,6 +1,7 @@
 import App from "@renderer/App";
 import React from "react";
 import { createRoot } from "react-dom/client";
+import { HashRouter } from "react-router";
 import "./index.css";
 
 const rootElement = document.getElementById("root");
@@ -11,6 +12,8 @@ if (!rootElement) {
 
 createRoot(rootElement).render(
 	<React.StrictMode>
-		<App />
+		<HashRouter useTransitions={false}>
+			<App />
+		</HashRouter>
 	</React.StrictMode>,
 );

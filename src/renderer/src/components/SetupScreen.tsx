@@ -1,3 +1,4 @@
+import { useNavigate } from "react-router";
 import { useBoothStore } from "../store";
 import LayoutThumbnail from "./LayoutThumbnail";
 
@@ -17,8 +18,8 @@ function SetupScreen({
 		setSelectedFrame,
 		cameraConnected,
 		errorMessage,
-		setScreen,
 	} = useBoothStore();
+	const navigate = useNavigate();
 
 	return (
 		<section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-20 sm:px-8">
@@ -163,7 +164,7 @@ function SetupScreen({
 			<footer className="mt-auto flex flex-wrap items-center justify-between gap-4 pt-8">
 				<button
 					className="min-h-14 rounded-xl border border-white/10 px-6 font-semibold text-neutral-300 transition hover:bg-white/10"
-					onClick={() => setScreen("attract")}
+					onClick={() => navigate("/", { replace: true })}
 					type="button"
 				>
 					Back

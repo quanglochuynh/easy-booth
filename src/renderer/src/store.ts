@@ -1,11 +1,9 @@
 import type { SetStateAction } from "react";
 import { create } from "zustand";
+import { DEFAULT_LAYOUT_ID, photoLayoutById } from "../../config/layouts";
 import type { CameraDetection, PrinterInfo } from "../../types/photobooth";
 
-type BoothScreen = "attract" | "setup" | "capture" | "review";
-
 interface BoothStore {
-	screen: BoothScreen;
 	cameras: CameraDetection[];
 	selectedCamera: string;
 	cameraConnected: boolean;
@@ -29,7 +27,6 @@ interface BoothStore {
 	copyCount: number;
 	printing: boolean;
 	errorMessage: string;
-	setScreen: (value: BoothScreen) => void;
 	setCameras: (value: CameraDetection[]) => void;
 	setSelectedCamera: (value: string) => void;
 	setCameraConnected: (value: boolean) => void;
@@ -56,7 +53,6 @@ interface BoothStore {
 }
 
 export const useBoothStore = create<BoothStore>((set) => ({
-	screen: "attract",
 	cameras: [],
 	selectedCamera: "",
 	cameraConnected: false,
@@ -70,7 +66,8 @@ export const useBoothStore = create<BoothStore>((set) => ({
 	adminOpen: false,
 	layoutFamily: "postcard",
 	shotCount: 3,
-	selectedFrame: "",
+	selectedFrame:
+		photoLayoutById.get(DEFAULT_LAYOUT_ID)?.availableFrames[0] ?? "",
 	countdown: null,
 	shots: [],
 	capturedPreview: "",
@@ -80,7 +77,6 @@ export const useBoothStore = create<BoothStore>((set) => ({
 	copyCount: 1,
 	printing: false,
 	errorMessage: "",
-	setScreen: (screen) => set({ screen }),
 	setCameras: (cameras) => set({ cameras }),
 	setSelectedCamera: (selectedCamera) => set({ selectedCamera }),
 	setCameraConnected: (cameraConnected) => set({ cameraConnected }),
