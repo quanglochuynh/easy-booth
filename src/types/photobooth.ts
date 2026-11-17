@@ -16,6 +16,7 @@ export interface PhotoboothAPI {
 	releaseCameraLock(): Promise<boolean>;
 	startLiveView(): Promise<void>;
 	stopLiveView(): Promise<void>;
+	/** Capture a photo and return its image data URL. */
 	capture(): Promise<string>;
 	saveComposite(dataUrl: string): Promise<string>;
 	getOutputDirectory(): Promise<string>;

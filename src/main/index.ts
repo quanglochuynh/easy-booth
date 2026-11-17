@@ -1,4 +1,5 @@
 import { electronApp, is, optimizer } from "@electron-toolkit/utils";
+import { readFile } from "node:fs/promises";
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import { join } from "path";
 import icon from "../../resources/icon.png?asset";
@@ -36,7 +37,12 @@ function registerCameraIpc(): void {
 	ipcMain.handle("camera:release-lock", () => cameraManager.releaseLock());
 	ipcMain.handle("camera:liveview-start", () => cameraManager.startLiveView());
 	ipcMain.handle("camera:liveview-stop", () => cameraManager.stopLiveView());
-	ipcMain.handle("camera:capture", () => cameraManager.capture());
+	ipcMain.handle("camera:capture", async () => {
+		const path = await cameraManager.capture();
+		const image = await readFile(path);
+		const mimeType = path.endsWith(".png") ? "image/png" : "image/jpeg";
+		return `data:${mimeType};base64,${image.toString("base64")}`;
+	});
 	ipcMain.handle("storage:save-composite", (_event, dataUrl: unknown) => {
 		if (typeof dataUrl !== "string") {
 			throw new TypeError("Composite data must be a string");

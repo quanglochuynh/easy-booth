@@ -1,49 +1,55 @@
 import { useState } from "react";
-import type { CameraDetection, PrinterInfo } from "../../../types/photobooth";
+import { useShallow } from "zustand/react/shallow";
+import { useBoothStore } from "../store";
 
 interface AdminModalProps {
-	open: boolean;
-	cameras: CameraDetection[];
-	selectedCamera: string;
 	onCameraChange: (port: string) => Promise<void>;
-	printers: PrinterInfo[];
-	selectedPrinter: string;
 	onPrinterChange: (name: string) => Promise<void>;
-	countdown: number;
 	onCountdownChange: (seconds: number) => void;
-	mockMode: boolean;
 	onMockModeChange: (enabled: boolean) => Promise<void>;
-	outputDirectory: string;
 	onChooseOutputDirectory: () => Promise<void>;
 	onRefreshCameras: () => Promise<void>;
 	onTestShutter: () => Promise<void>;
 	onPrintTestPage: () => Promise<void>;
-	onClose: () => void;
 }
 
 function AdminModal({
-	open,
-	cameras,
-	selectedCamera,
 	onCameraChange,
-	printers,
-	selectedPrinter,
 	onPrinterChange,
-	countdown,
 	onCountdownChange,
-	mockMode,
 	onMockModeChange,
-	outputDirectory,
 	onChooseOutputDirectory,
 	onRefreshCameras,
 	onTestShutter,
 	onPrintTestPage,
-	onClose,
 }: AdminModalProps) {
+	const {
+		adminOpen,
+		setAdminOpen,
+		cameras,
+		selectedCamera,
+		printers,
+		selectedPrinter,
+		countdownDuration,
+		mockMode,
+		outputDirectory,
+	} = useBoothStore(
+		useShallow((state) => ({
+			adminOpen: state.adminOpen,
+			setAdminOpen: state.setAdminOpen,
+			cameras: state.cameras,
+			selectedCamera: state.selectedCamera,
+			printers: state.printers,
+			selectedPrinter: state.selectedPrinter,
+			countdownDuration: state.countdownDuration,
+			mockMode: state.mockMode,
+			outputDirectory: state.outputDirectory,
+		})),
+	);
 	const [busyAction, setBusyAction] = useState("");
 	const [feedback, setFeedback] = useState("");
 
-	if (!open) {
+	if (!adminOpen) {
 		return null;
 	}
 
@@ -98,7 +104,7 @@ function AdminModal({
 						aria-label="Close settings"
 						className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 text-2xl text-neutral-300 transition hover:bg-white/10 focus-visible:outline-2 focus-visible:outline-amber-300"
 						disabled={Boolean(busyAction)}
-						onClick={onClose}
+						onClick={() => setAdminOpen(false)}
 						type="button"
 					>
 						×
@@ -112,9 +118,7 @@ function AdminModal({
 							<button
 								className="min-h-10 rounded-xl border border-white/10 px-4 text-sm text-neutral-300 transition hover:bg-white/10 disabled:opacity-50"
 								disabled={Boolean(busyAction)}
-								onClick={() =>
-									void runAction("Camera scan", onRefreshCameras)
-								}
+								onClick={() => void runAction("Camera scan", onRefreshCameras)}
 								type="button"
 							>
 								Scan again
@@ -203,7 +207,7 @@ function AdminModal({
 								onChange={(event) =>
 									onCountdownChange(Number(event.target.value))
 								}
-								value={countdown}
+								value={countdownDuration}
 							>
 								<option value={3}>3 seconds</option>
 								<option value={5}>5 seconds</option>
