@@ -1,5 +1,6 @@
-import { useNavigate } from "react-router";
-import { useBoothStore } from "../store";
+import { useDeviceStore } from "../stores/deviceStore";
+import { useSettingsStore } from "../stores/settingsStore";
+import { useUiStore } from "../stores/uiStore";
 import LayoutThumbnail from "./LayoutThumbnail";
 
 function SetupScreen({
@@ -16,10 +17,9 @@ function SetupScreen({
 		setShotCount,
 		selectedFrame,
 		setSelectedFrame,
-		cameraConnected,
-		errorMessage,
-	} = useBoothStore();
-	const navigate = useNavigate();
+	} = useSettingsStore();
+	const cameraConnected = useDeviceStore((state) => state.cameraConnected);
+	const errorMessage = useUiStore((state) => state.errorMessage);
 
 	return (
 		<section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-20 sm:px-8">
@@ -161,14 +161,7 @@ function SetupScreen({
 					{errorMessage}
 				</p>
 			)}
-			<footer className="mt-auto flex flex-wrap items-center justify-between gap-4 pt-8">
-				<button
-					className="min-h-14 rounded-xl border border-white/10 px-6 font-semibold text-neutral-300 transition hover:bg-white/10"
-					onClick={() => navigate("/", { replace: true })}
-					type="button"
-				>
-					Back
-				</button>
+			<footer className="mt-auto flex flex-wrap items-center justify-end gap-4 pt-8">
 				<button
 					className="min-h-14 rounded-xl bg-amber-300 px-7 font-semibold text-neutral-950 transition hover:bg-amber-200 disabled:cursor-not-allowed disabled:opacity-40"
 					disabled={!cameraConnected}

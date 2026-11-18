@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useShallow } from "zustand/react/shallow";
-import { useBoothStore } from "../store";
+import { useDeviceStore } from "../stores/deviceStore";
+import { useSettingsStore } from "../stores/settingsStore";
+import { useUiStore } from "../stores/uiStore";
 
 interface AdminModalProps {
 	onCameraChange: (port: string) => Promise<void>;
@@ -24,28 +26,26 @@ function AdminModal({
 	onPrintTestPage,
 }: AdminModalProps) {
 	const {
-		adminOpen,
-		setAdminOpen,
 		cameras,
 		selectedCamera,
 		printers,
 		selectedPrinter,
-		countdownDuration,
-		mockMode,
-		outputDirectory,
-	} = useBoothStore(
+	} = useDeviceStore(
 		useShallow((state) => ({
-			adminOpen: state.adminOpen,
-			setAdminOpen: state.setAdminOpen,
 			cameras: state.cameras,
 			selectedCamera: state.selectedCamera,
 			printers: state.printers,
 			selectedPrinter: state.selectedPrinter,
+		})),
+	);
+	const { countdownDuration, mockMode, outputDirectory } = useSettingsStore(
+		useShallow((state) => ({
 			countdownDuration: state.countdownDuration,
 			mockMode: state.mockMode,
 			outputDirectory: state.outputDirectory,
 		})),
 	);
+	const { adminOpen, setAdminOpen } = useUiStore();
 	const [busyAction, setBusyAction] = useState("");
 	const [feedback, setFeedback] = useState("");
 

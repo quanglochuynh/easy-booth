@@ -1,4 +1,6 @@
-import { useBoothStore } from "../store";
+import { useCaptureStore } from "../stores/captureStore";
+import { useDeviceStore } from "../stores/deviceStore";
+import { useUiStore } from "../stores/uiStore";
 
 function CaptureScreen({
 	shotCount,
@@ -9,14 +11,13 @@ function CaptureScreen({
 }) {
 	const {
 		shots,
-		cameraError,
-		liveView,
 		capturedPreview,
 		countdown,
 		processing,
 		flash,
-		errorMessage,
-	} = useBoothStore();
+	} = useCaptureStore();
+	const { cameraError, liveView } = useDeviceStore();
+	const errorMessage = useUiStore((state) => state.errorMessage);
 
 	return (
 		<section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col items-center justify-center px-5 py-20 sm:px-8">

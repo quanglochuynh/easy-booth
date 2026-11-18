@@ -8,7 +8,7 @@ import { getSessionDirectory } from "../storage/fileManager";
 
 const execFileAsync = promisify(execFile);
 const MAX_FRAME_SIZE = 20 * 1024 * 1024;
-const MOCK_FRAME_INTERVAL_MS = 100;
+const MOCK_FRAME_INTERVAL_MS = 100; // 100 ms per frame, i.e., 10 frames per second
 
 interface LiveViewProcess {
 	child: ChildProcess;
@@ -39,8 +39,7 @@ export class Gphoto2Manager {
 		const cameras = await this.detectCameras();
 		return (
 			cameras.find((camera) => camera.port === this.selectedCameraPort) ??
-			cameras[0] ??
-			{ connected: false }
+			cameras[0] ?? { connected: false }
 		);
 	}
 
@@ -241,6 +240,7 @@ export class Gphoto2Manager {
 				capturePath = join(directory, `shot_${this.captureNumber}.png`);
 				await copyFile(this.getMockImagePath(), capturePath);
 			} else {
+				console.log(`Capturing image ${this.captureNumber}`);
 				// The camera's own %n counter can repeat, overwriting earlier shots.
 				capturePath = join(directory, `shot_${this.captureNumber}.jpg`);
 				await this.runGphoto2([
@@ -252,6 +252,7 @@ export class Gphoto2Manager {
 				await stat(capturePath);
 			}
 		} catch (error) {
+			console.log(error);
 			captureFailure = error;
 		}
 
@@ -278,6 +279,7 @@ export class Gphoto2Manager {
 		return capturePath;
 	}
 
+	// Emits JPEG frames from the given buffer, calling the onFrame callback for each complete frame. Returns any remaining buffer data.
 	private emitJpegFrames(buffer: Buffer): Buffer {
 		const soi = Buffer.from([0xff, 0xd8]);
 		const eoi = Buffer.from([0xff, 0xd9]);

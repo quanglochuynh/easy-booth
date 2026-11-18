@@ -1,10 +1,12 @@
+import { randomUUID } from "node:crypto";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { randomUUID } from "node:crypto";
 import { app } from "electron";
 
 const MAX_COMPOSITE_SIZE = 100 * 1024 * 1024;
-const PNG_SIGNATURE = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
+const PNG_SIGNATURE = Buffer.from([
+	0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a,
+]);
 const OUTPUT_DIRECTORY_CONFIG = "photobooth-output-directory.txt";
 
 let sessionDirectory: Promise<string> | undefined;
@@ -43,14 +45,19 @@ export async function setOutputDirectory(directory: string): Promise<string> {
 	await mkdir(userDataDirectory, { recursive: true });
 	const configPath = join(userDataDirectory, OUTPUT_DIRECTORY_CONFIG);
 	const temporaryPath = `${configPath}.${randomUUID()}.tmp`;
-	await writeFile(temporaryPath, outputDirectory, { encoding: "utf8", flag: "wx" });
+	await writeFile(temporaryPath, outputDirectory, {
+		encoding: "utf8",
+		flag: "wx",
+	});
 	await rename(temporaryPath, configPath);
 	sessionDirectory = undefined;
 	return outputDirectory;
 }
 
 export async function saveComposite(dataUrl: string): Promise<string> {
-	const match = dataUrl.match(/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/);
+	const match = dataUrl.match(
+		/^data:image\/(png|jpeg);base64,([A-Za-z0-9+/]+={0,2})$/,
+	);
 	if (!match) {
 		throw new TypeError("Composite must be a PNG or JPEG base64 data URL");
 	}
@@ -77,16 +84,23 @@ export async function saveComposite(dataUrl: string): Promise<string> {
 				image[1] === 0xd8 &&
 				image[2] === 0xff;
 	if (!validSignature) {
-		throw new TypeError(`Composite data does not contain a valid ${format.toUpperCase()} image`);
+		throw new TypeError(
+			`Composite data does not contain a valid ${format.toUpperCase()} image`,
+		);
 	}
 
 	const directory = await getSessionDirectory();
-	const filePath = join(directory, `composite-${randomUUID()}.${format === "jpeg" ? "jpg" : "png"}`);
+	const filePath = join(
+		directory,
+		`composite-${randomUUID()}.${format === "jpeg" ? "jpg" : "png"}`,
+	);
 	await writeFile(filePath, image, { flag: "wx" });
 	return filePath;
 }
 
-async function createSessionDirectory(outputDirectory: string): Promise<string> {
+async function createSessionDirectory(
+	outputDirectory: string,
+): Promise<string> {
 	const directory = join(outputDirectory, `session-${randomUUID()}`);
 	await mkdir(directory, { recursive: true });
 	return directory;

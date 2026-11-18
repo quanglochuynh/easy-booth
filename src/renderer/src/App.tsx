@@ -10,11 +10,13 @@ import {
 	playCountdownTone,
 } from "./appHelpers";
 import AdminModal from "./components/AdminModal";
-import AttractScreen from "./components/AttractScreen";
 import CaptureScreen from "./components/CaptureScreen";
 import ReviewScreen from "./components/ReviewScreen";
 import SetupScreen from "./components/SetupScreen";
-import { useBoothStore } from "./store";
+import { useCaptureStore } from "./stores/captureStore";
+import { useDeviceStore } from "./stores/deviceStore";
+import { useSettingsStore } from "./stores/settingsStore";
+import { useUiStore } from "./stores/uiStore";
 
 const COUNTDOWN_STORAGE_KEY = "easy-booth-countdown";
 const MOCK_MODE_STORAGE_KEY = "easy-booth-mock-mode";
@@ -31,16 +33,19 @@ function App() {
 		setPrinters,
 		selectedPrinter,
 		setSelectedPrinter,
+	} = useDeviceStore();
+	const {
 		setOutputDirectory,
 		mockMode,
 		setMockMode,
 		countdownDuration,
 		setCountdownDuration,
-		setAdminOpen,
 		layoutFamily,
 		shotCount,
 		selectedFrame,
 		setSelectedFrame,
+	} = useSettingsStore();
+	const {
 		setCountdown,
 		setShots,
 		setCapturedPreview,
@@ -52,8 +57,8 @@ function App() {
 		setCopyCount,
 		printing,
 		setPrinting,
-		setErrorMessage,
-	} = useBoothStore();
+	} = useCaptureStore();
+	const { setAdminOpen, setErrorMessage } = useUiStore();
 	const navigate = useNavigate();
 	const [captureActive, setCaptureActive] = useState(false);
 	const audioContext = useRef<AudioContext | null>(null);
@@ -267,11 +272,6 @@ function App() {
 		});
 	};
 
-	const startSetup = () => {
-		setErrorMessage("");
-		navigate("/setup", { replace: true });
-	};
-
 	const startCaptureSession = async () => {
 		setErrorMessage("");
 		setCameraError("");
@@ -347,7 +347,7 @@ function App() {
 			await window.photoboothAPI.stopLiveView();
 			setLiveView("");
 			setCaptureActive(false);
-			navigate("/setup", { replace: true });
+			navigate("/", { replace: true });
 		} catch (error) {
 			setErrorMessage(`Could not stop live view: ${errorText(error)}`);
 		}
@@ -402,9 +402,8 @@ function App() {
 			</div>
 
 			<Routes>
-				<Route path="/" element={<AttractScreen onStart={startSetup} />} />
 				<Route
-					path="/setup"
+					path="/"
 					element={
 						<SetupScreen
 							availableFrames={availableFrames}
@@ -412,6 +411,7 @@ function App() {
 						/>
 					}
 				/>
+				<Route path="/setup" element={<Navigate to="/" replace />} />
 				<Route
 					path="/capture"
 					element={
@@ -421,7 +421,7 @@ function App() {
 								onCancel={cancelCapture}
 							/>
 						) : (
-							<Navigate to="/setup" replace />
+							<Navigate to="/" replace />
 						)
 					}
 				/>
@@ -434,7 +434,7 @@ function App() {
 								onPrint={printPhotos}
 							/>
 						) : (
-							<Navigate to="/setup" replace />
+							<Navigate to="/" replace />
 						)
 					}
 				/>

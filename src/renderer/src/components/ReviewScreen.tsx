@@ -1,4 +1,5 @@
-import { useBoothStore } from "../store";
+import { useCaptureStore } from "../stores/captureStore";
+import { useUiStore } from "../stores/uiStore";
 
 function ReviewScreen({
 	onRetake,
@@ -7,8 +8,8 @@ function ReviewScreen({
 	onRetake: () => Promise<void>;
 	onPrint: () => Promise<void>;
 }) {
-	const { compositeImage, errorMessage, copyCount, setCopyCount } =
-		useBoothStore();
+	const { compositeImage, copyCount, setCopyCount } = useCaptureStore();
+	const errorMessage = useUiStore((state) => state.errorMessage);
 
 	return (
 		<section className="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-5 py-20 sm:px-8">

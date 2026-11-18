@@ -1,5 +1,5 @@
-import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { readFile } from "node:fs/promises";
+import { electronApp, is, optimizer } from "@electron-toolkit/utils";
 import { app, BrowserWindow, dialog, ipcMain, shell } from "electron";
 import { join } from "path";
 import icon from "../../resources/icon.png?asset";
@@ -91,8 +91,8 @@ function registerCameraIpc(): void {
 function createWindow(): void {
 	// Create the browser window.
 	const mainWindow = new BrowserWindow({
-		width: 900,
-		height: 670,
+		width: 1920,
+		height: 1080,
 		show: false,
 		autoHideMenuBar: true,
 		...(process.platform === "linux" ? { icon } : {}),
