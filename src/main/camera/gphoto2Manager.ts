@@ -129,6 +129,7 @@ export class Gphoto2Manager {
 		if (this.selectedCameraPort && this.selectedCameraPort !== "mock") {
 			liveViewArgs.push("--port", this.selectedCameraPort);
 		}
+		logGphoto2Command(liveViewArgs);
 		const child = spawn("gphoto2", liveViewArgs, {
 			stdio: ["ignore", "pipe", "pipe"],
 		});
@@ -326,6 +327,7 @@ export class Gphoto2Manager {
 				!args.includes("--auto-detect")
 					? [...args, "--port", this.selectedCameraPort]
 					: args;
+			logGphoto2Command(commandArgs);
 			const result = await execFileAsync("gphoto2", commandArgs, {
 				encoding: "utf8",
 				maxBuffer: 10 * 1024 * 1024,
@@ -348,6 +350,11 @@ export class Gphoto2Manager {
 	private getMockImagePath(): string {
 		return join(app.getAppPath(), "resources", "icon.png");
 	}
+}
+
+function logGphoto2Command(args: string[]): void {
+	const formattedArgs = args.map((argument) => JSON.stringify(argument)).join(" ");
+	console.log(`[gphoto2] gphoto2 ${formattedArgs}`);
 }
 
 async function stopChild(record: LiveViewProcess): Promise<void> {

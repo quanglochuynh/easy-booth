@@ -19,6 +19,7 @@ import { useSettingsStore } from "./stores/settingsStore";
 import { useUiStore } from "./stores/uiStore";
 
 const COUNTDOWN_STORAGE_KEY = "easy-booth-countdown";
+const CAPTURE_COMMAND_AT_STORAGE_KEY = "easy-booth-capture-command-at";
 const MOCK_MODE_STORAGE_KEY = "easy-booth-mock-mode";
 
 function App() {
@@ -40,6 +41,8 @@ function App() {
 		setMockMode,
 		countdownDuration,
 		setCountdownDuration,
+		captureCommandAt,
+		setCaptureCommandAt,
 		layoutFamily,
 		shotCount,
 		selectedFrame,
@@ -143,8 +146,14 @@ function App() {
 				const savedCountdown = Number(
 					window.localStorage.getItem(COUNTDOWN_STORAGE_KEY),
 				);
-				if ([3, 5, 8].includes(savedCountdown)) {
+				if ([3, 4, 5, 6].includes(savedCountdown)) {
 					setCountdownDuration(savedCountdown);
+				}
+				const savedCaptureCommandAt = Number(
+					window.localStorage.getItem(CAPTURE_COMMAND_AT_STORAGE_KEY),
+				);
+				if ([0, 1, 2, 3].includes(savedCaptureCommandAt)) {
+					setCaptureCommandAt(savedCaptureCommandAt);
 				}
 			} catch (error) {
 				if (mounted) {
@@ -181,6 +190,7 @@ function App() {
 		setErrorMessage,
 		setOutputDirectory,
 		setCountdownDuration,
+		setCaptureCommandAt,
 		setLiveView,
 	]);
 
@@ -247,6 +257,14 @@ function App() {
 		window.localStorage.setItem(COUNTDOWN_STORAGE_KEY, String(seconds));
 	};
 
+	const changeCaptureCommandAt = (seconds: number) => {
+		setCaptureCommandAt(seconds);
+		window.localStorage.setItem(
+			CAPTURE_COMMAND_AT_STORAGE_KEY,
+			String(seconds),
+		);
+	};
+
 	const chooseOutputDirectory = async () => {
 		const directory = await window.photoboothAPI.chooseOutputDirectory();
 		if (directory) {
@@ -308,9 +326,16 @@ function App() {
 	) => {
 		const captured: string[] = [];
 		for (let shot = 0; shot < selectedLayout.shotCount; shot += 1) {
+			let captureResult: Promise<PromiseSettledResult<string>> | undefined;
 			for (let seconds = countdownDuration; seconds > 0; seconds -= 1) {
 				setCountdown(seconds);
 				playCountdownTone(audioContext.current, seconds === 1);
+				if (seconds === captureCommandAt) {
+					captureResult = window.photoboothAPI.capture().then(
+						(value) => ({ status: "fulfilled", value }),
+						(reason) => ({ status: "rejected", reason }),
+					);
+				}
 				await delay(1_000);
 			}
 			setCountdown(null);
@@ -318,7 +343,16 @@ function App() {
 			await delay(180);
 			setFlash(false);
 			setProcessing(true);
-			const photo = await window.photoboothAPI.capture();
+			const result =
+				(await captureResult) ??
+				(await window.photoboothAPI.capture().then(
+					(value) => ({ status: "fulfilled" as const, value }),
+					(reason) => ({ status: "rejected" as const, reason }),
+				));
+			if (result.status === "rejected") {
+				throw result.reason;
+			}
+			const photo = result.value;
 			setProcessing(false);
 			captured.push(photo);
 			setShots([...captured]);
@@ -453,6 +487,7 @@ function App() {
 
 			<AdminModal
 				onCameraChange={chooseCamera}
+				onCaptureCommandAtChange={changeCaptureCommandAt}
 				onChooseOutputDirectory={chooseOutputDirectory}
 				onCountdownChange={changeCountdownDuration}
 				onMockModeChange={toggleMockMode}

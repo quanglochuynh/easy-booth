@@ -5,12 +5,14 @@ interface SettingsStore {
 	outputDirectory: string;
 	mockMode: boolean;
 	countdownDuration: number;
+	captureCommandAt: number;
 	layoutFamily: "strip" | "postcard";
 	shotCount: number;
 	selectedFrame: string;
 	setOutputDirectory: (value: string) => void;
 	setMockMode: (value: boolean) => void;
 	setCountdownDuration: (value: number) => void;
+	setCaptureCommandAt: (value: number) => void;
 	setLayoutFamily: (value: "strip" | "postcard") => void;
 	setShotCount: (value: number) => void;
 	setSelectedFrame: (value: string) => void;
@@ -20,6 +22,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
 	outputDirectory: "",
 	mockMode: false,
 	countdownDuration: 3,
+	captureCommandAt: 0,
 	layoutFamily: "postcard",
 	shotCount: 3,
 	selectedFrame:
@@ -27,6 +30,7 @@ export const useSettingsStore = create<SettingsStore>((set) => ({
 	setOutputDirectory: (outputDirectory) => set({ outputDirectory }),
 	setMockMode: (mockMode) => set({ mockMode }),
 	setCountdownDuration: (countdownDuration) => set({ countdownDuration }),
+	setCaptureCommandAt: (captureCommandAt) => set({ captureCommandAt }),
 	setLayoutFamily: (layoutFamily) => set({ layoutFamily }),
 	setShotCount: (shotCount) => set({ shotCount }),
 	setSelectedFrame: (selectedFrame) => set({ selectedFrame }),

@@ -8,6 +8,7 @@ interface AdminModalProps {
 	onCameraChange: (port: string) => Promise<void>;
 	onPrinterChange: (name: string) => Promise<void>;
 	onCountdownChange: (seconds: number) => void;
+	onCaptureCommandAtChange: (seconds: number) => void;
 	onMockModeChange: (enabled: boolean) => Promise<void>;
 	onChooseOutputDirectory: () => Promise<void>;
 	onRefreshCameras: () => Promise<void>;
@@ -19,6 +20,7 @@ function AdminModal({
 	onCameraChange,
 	onPrinterChange,
 	onCountdownChange,
+	onCaptureCommandAtChange,
 	onMockModeChange,
 	onChooseOutputDirectory,
 	onRefreshCameras,
@@ -38,9 +40,15 @@ function AdminModal({
 			selectedPrinter: state.selectedPrinter,
 		})),
 	);
-	const { countdownDuration, mockMode, outputDirectory } = useSettingsStore(
+	const {
+		countdownDuration,
+		captureCommandAt,
+		mockMode,
+		outputDirectory,
+	} = useSettingsStore(
 		useShallow((state) => ({
 			countdownDuration: state.countdownDuration,
+			captureCommandAt: state.captureCommandAt,
 			mockMode: state.mockMode,
 			outputDirectory: state.outputDirectory,
 		})),
@@ -210,8 +218,24 @@ function AdminModal({
 								value={countdownDuration}
 							>
 								<option value={3}>3 seconds</option>
+								<option value={4}>4 seconds</option>
 								<option value={5}>5 seconds</option>
-								<option value={8}>8 seconds</option>
+								<option value={6}>6 seconds</option>
+							</select>
+						</label>
+						<label className="text-sm text-neutral-400">
+							Start sending capture command at
+							<select
+								className="mt-2 min-h-12 w-full rounded-xl border border-white/10 bg-neutral-800 px-3 text-white outline-none focus:border-amber-300"
+								onChange={(event) =>
+									onCaptureCommandAtChange(Number(event.target.value))
+								}
+								value={captureCommandAt}
+							>
+								<option value={0}>0 seconds</option>
+								<option value={1}>1 second</option>
+								<option value={2}>2 seconds</option>
+								<option value={3}>3 seconds</option>
 							</select>
 						</label>
 						<div className="text-sm text-neutral-400">
